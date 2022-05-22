@@ -11,7 +11,7 @@ void setup() {
 void loop() {
 	
 	in=(float)analogRead(A0)*5/1023;
-	delay(50);
+	delay(100);
 
         analogWrite(3,poz_napatie); 
 	Serial.println(in);
