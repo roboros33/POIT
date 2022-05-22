@@ -14,7 +14,7 @@ void loop() {
 	delay(50);
 
         analogWrite(3,poz_napatie); 
-	Serial.println(out);
+	Serial.println(in);
 	
 	if (Serial.read() != -1) {
 		poz_napatie = Serial.read();
