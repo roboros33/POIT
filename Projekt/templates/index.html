@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+   <head>
+      <title>Flask-SocketIO Test</title>
+      <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
+      <link rel="stylesheet" href="static/libs/jquery-ui.min.css">
+      <script src="static/libs/plotly-latest.min.js"></script>
+      <script src="static/libs/jquery-3.2.1.min.js"></script>
+      <script src="static/libs/jquery-ui.min.js"></script>
+      <script src="static/libs/gauge.min.js"></script>
+      <script type="text/javascript" charset="utf-8">
+         $( function() {
+           $( "#tabs" ).tabs({
+             event: "mouseover"
+           });
+         });
+         $(document).ready(function() {
+           var msg = undefined; 
+           var xAx = new Array();
+           var yAx = new Array();
+           
+          var gauge = new RadialGauge({
+          renderTo: 'canvasid',
+          width: 300,
+          height: 300,
+          units: "Volt",
+          minValue: 0,
+          maxValue: 5,
+          majorTicks: [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+          ],
+          minorTicks: 2,
+          strokeTicks: true,
+          highlights: [
+              {
+                  "from": 0.95,
+                  "to": 1.05,
+                  "color": "rgba(200, 50, 50, .75)"
+              }
+          ],
+          colorplate: "#fff",
+          bordershadowwidth: 0,
+          borders: false,
+          needletype: "arrow",
+          needlewidth: 2,
+          needlecirclesize: 7,
+          needlecircleouter: true,
+          needlecircleinner: false,
+          animationduration: 1500,
+          animationrule: "linear"
+          });
+         gauge.draw();
+      
+         // Define Layout
+         var layout = {
+           xaxis: {title: "x"},
+           yaxis: {title: "y"},
+           title: "Graf napätia"
+         };
+      
+         namespace = '/test';
+         var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+         socket.on('connect', function() {
+         socket.emit('my_event', {data: 'I\'m connected!', value: 1}); });
+
+         socket.on('my_response', function(msg) {
+         console.log(msg.data);
+         $('#log').append('Received #'+msg.count+': '+msg.data+'<br>').html();
+
+         var data = [{
+           x: xAx,
+           y: yAx,
+           mode: "lines",
+           type: "scatter"
+         }];
+
+         gauge.value = msg.data;
+
+         xAx.push(parseFloat(msg.count));
+
+         yAx.push(parseFloat(msg.data));
+
+         Plotly.newPlot("plotdiv", data, layout);
+         });
+
+         $('form#emit').submit(function(event) {
+           socket.emit('my_event', {value: $('#emit_value').val()});
+           return false; });
+         $('#buttonValStart').click(function(event) {
+          console.log($('#buttonValStart').val());
+          socket.emit('click_eventStart', {value: $('#buttonValStart').val()});
+          return false; });
+         $('#buttonValStop').click(function(event) {
+          console.log($('#buttonValStop').val());
+          socket.emit('click_eventStop', {value: $('#buttonValStop').val()});
+         return false; });
+         $('form#disconnect').submit(function(event) {
+           socket.emit('disconnect_request');
+           return false; });      
+          
+              
+         });
+      </script>
+   </head>
+   <body>
+      <h1>Projekt - riadenie napätia C2</h1>
+      <h2>Send:</h2>
+      <form id="emit" method="POST" action='#'>
+         <input type="text" name="emit_value" id="emit_value" placeholder="value to regulate">
+         <input type="submit" value="Pošli do Arduina">
+      </form>
+      <button id="buttonValStart" type="submit" value="send">Start</button>
+      <button id="buttonValStop" type="submit" value="stop">Stop</button>
+      <form id="disconnect" method="POST" action="#">
+         <input type="submit" value="Disconnect">
+      </form>
+      <div id="tabs">
+         <ul>
+            <li><a href="#tabs-1">Hodnoty</a></li>
+            <li><a href="#tabs-2">Graf</a></li>
+            <li><a href="#tabs-3">Cifernik</a></li>
+         </ul>
+         <div id="tabs-1">
+            <h2>Receive:</h2>
+            <div id="log"></div>
+         </div>
+         <div id="tabs-2">
+            <div id="plotdiv" style="width:600px;height:250px;"></div>
+         </div>
+         <div id="tabs-3">
+            <canvas id="canvasid"></canvas>
+         </div>
+      </div>
+   </body>
+</html>
